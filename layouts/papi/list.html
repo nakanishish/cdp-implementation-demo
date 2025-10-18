@@ -1,0 +1,227 @@
+{{ define "main" }}
+
+{{ partial "page-title.html" . }}
+
+{{ if site.Data.papi.papi.enable }}
+<section class="section pt-0">
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-4">
+<!-- 後で消す
+      <div id="contentArea"></div>
+-->
+<!-- FIXME -->
+<img src="https://in.treasuredata.com/postback/v3/event/<自分のイニシャル>_l0_access_log/pixel_test?td_format=pixel&td_write_key=<Write Only APIKEYを指定>&td_global_id=td_global_id&td_ip=td_ip&td_ua=td_ua&key1=val1&key2=val2&key3=val3" />
+
+        <h3 class="
+        mb-4">Profile API sample</h3>
+        <p>Example: td_client_id = d5b94a74-1005-485a-ba0f-c67b6d12b6ee</p>
+        <p>Example: Profile API Token = <Profile API Tokenを指定></p>
+        <form action="{{ site.Params.papi.formAction }}" method="POST">
+          <input type="text" class="form-control mb-2" id="client_id_input" name="td_client_id" placeholder="Enter Client ID">
+          <input type="text" class="form-control mb-2" id="token_input" name="token" placeholder="Enter Profile API Token">
+          <button type="button" class="btn btn-block btn-outline-primary rounded" id="fetch_segment_button">Fetch</button>
+        </form>
+      </div>
+      <div class="highlight" id="resultArea"></div>
+  <script>
+
+    function updateContent(nbp_1, nbp_2) {
+      var popupContent = document.getElementById('popupContent');
+      console.log('popupContent element:', popupContent);
+      var content = '';
+
+      if (nbp_1 === 'TreasureBike Bike Helmet w/ Flip Visor') {
+        content += '<h2>バイクヘルメットのオファー</h2>';
+        content += '<p>フリップバイザー付きの最新バイクヘルメットをチェックしてください！</p>';
+      }
+    
+      if (nbp_2 === 'Treasurebike Boot Bag 30L') {
+        content += '<h2>ブーツバッグ特集</h2>';
+        content += '<p>30Lのブーツバッグは次の冒険に最適です！</p>';
+      }
+    
+      if (content === '') {
+        content = '<p>ストアへようこそ！</p>';
+      }
+    
+      popupContent.innerHTML = content;
+      showPopup();
+    }
+
+    
+    function showPopup() {
+      var popup = document.getElementById('popup');
+      popup.style.display = 'block';
+
+      var closeBtn = document.getElementsByClassName('close')[0];
+      closeBtn.onclick = function() {
+        popup.style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        if (event.target == popup) {
+          popup.style.display = 'none';
+        }
+      }
+    }
+
+    var fetch_segment_func = function(token) {
+      // Check if Treasure SDK instance is available (should be initialized via Netlify Snippet injection)
+      if (typeof td === 'undefined') {
+        console.error('Treasure Data SDK not initialized. Please check JS-SDK installation via Netlify Snippet injection.');
+        var resultArea = document.getElementById('resultArea');
+        if (resultArea) {
+          resultArea.innerHTML = '<p style="color: red;">Error: Treasure Data SDK not initialized. Please check JS-SDK installation via Netlify Snippet injection.</p>';
+        }
+        return;
+      }
+
+      // Reuse the global td instance initialized in the main tracking code
+      td.ready(function(){
+        //var td_client_id = td.getCookie('td_client_id');
+        var td_client_id = td.getTrackValues().td_client_id;
+        console.log("td_client_id: ", td_client_id);
+
+        var successCallback = function(callbackResults) {
+          var resultMsg  = '<h3>Result</h3>';
+          var nbp_1  = '';
+          var nbp_2  = '';
+  
+          callbackResults.forEach(function(callbackResult) {
+            resultMsg     += '<h4>Key</h4>';
+            resultMsg     += '<ul>';
+            Object.keys(callbackResult.key).forEach(function(key) {
+              resultMsg += '<li>' + key + '</li>';
+            });
+            resultMsg     += '</ul>';
+  
+            resultMsg     += '<h4>Segments</h4>';
+            if(callbackResult.values.length <= 0) {
+              resultMsg += '<span>No segments</span>';
+            } else {
+              resultMsg     += '<ul>';
+              callbackResult.values.forEach(function(value) {
+              resultMsg += ('<li>' + value + '</li>');
+              });
+              resultMsg     += '</ul>';
+            }
+
+            resultMsg     += '<h4>Attributes</h4>';
+            if(callbackResult.attributes.length <= 0) {
+              resultMsg += '<span>No attributes</span>';
+            } else {
+              resultMsg += '<ul>';
+              Object.keys(callbackResult.attributes).forEach(function(key) {
+                resultMsg += ('<li>' + key + ' = ' + callbackResult.attributes[key] + '</li>');
+                if (key === 'nbp_1') nbp_1 = callbackResult.attributes[key];
+                if (key === 'nbp_2') nbp_2 = callbackResult.attributes[key];
+              });
+              resultMsg += '</ul>';
+            }
+          });
+  
+          updateContent(nbp_1, nbp_2);
+
+          var resultArea = document.getElementById('resultArea');
+          resultArea.innerHTML = resultMsg;
+        }
+
+        var errorCallback = function(error) {
+          console.error('Profile API Error:', error);
+          var resultArea = document.getElementById('resultArea');
+          if (resultArea) {
+            resultArea.innerHTML = '<p style="color: red;">Error: ' + error + '</p>';
+          }
+        }
+  
+        if (token === '') {
+            // FIXME
+            // default API token for Debugging
+            token = '<Profile API Tokenを指定>';
+        } 
+
+        console.log("td_client_id = " + td_client_id);
+        console.log("token = " +token);
+  
+        td.fetchUserSegments({
+          audienceToken: [token],
+          keys: {td_client_id: td_client_id}
+        }, successCallback, errorCallback);
+      });
+    }
+
+    document.getElementById('fetch_segment_button').onclick = function() {
+      //var clientId = document.getElementById('client_id_input').value;
+      var token    = document.getElementById('token_input').value;
+      //fetch_segment_func(clientId, token);
+      fetch_segment_func(token);
+    };
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+      //var clientId = 'eb914927-2ea6-41f4-bddf-b75f89d464b6'; // 例のクライアントID
+      var token = '<Profile API Tokenを指定>'; // 例のトークン
+      //fetch_segment_func(clientId, token);
+      fetch_segment_func(token);
+    });
+
+  </script>
+
+    </div>
+  </div>
+<!-- 追加予定-->
+  <!-- ポップアップ用のHTML -->
+  <div id="popup" class="popup" style="display: none;">
+    <div class="popup-content">
+      <span class="close">&times;</span>
+      <div id="popupContent"></div>
+    </div>
+  </div>
+
+  <!-- スタイル -->
+  <style>
+    .popup {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .popup-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 600px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</section>
+
+
+
+{{ end }}
+
+
+{{ end }}
