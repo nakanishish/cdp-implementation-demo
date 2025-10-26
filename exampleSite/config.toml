@@ -107,7 +107,7 @@ location = "Tokyo, Japan"
 copyright = "| Copyright &copy; 2021 [Treasure Academy](https://academy.treasure-data.com) All Rights Reserved |"
 # Snipcart Credentials
 # **FIXME**
-snipcartApiKey = "<SnipcartのAPI Keyを指定>"
+snipcartApiKey = "OThmYzRhZDgtYjUyOC00NGFlLTkxY2EtMTE3ZjBlYWI0YmI2NjM4OTcxMDE2ODE3NTMyMzUz"
 currencySymbol = "$"
 
 
